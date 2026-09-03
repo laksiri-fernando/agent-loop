@@ -9,10 +9,17 @@ from pydantic import BaseModel, Field
 load_dotenv()
 
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+MODEL_FOR_REVIEW = os.getenv("GROQ_MODEL_FOR_REVIEW", "qwen/qwen3.8-27b")
 MAX_REVISIONS = int(os.getenv("MAX_REVISIONS", "2"))
 
 model = ChatGroq(
     model=MODEL,
+    temperature=0,
+    api_key=os.getenv('GROQ_API_KEY')
+)
+
+model_for_review = ChatGroq(
+    model=MODEL_FOR_REVIEW,
     temperature=0,
     api_key=os.getenv('GROQ_API_KEY')
 )
@@ -32,7 +39,7 @@ class Review(BaseModel):
         description="Short, specific feedback. Empty string when decision is PASS"
     )
 
-reviewer_model = model.with_structured_output(Review)
+reviewer_model = model_for_review.with_structured_output(Review)
 
 def writer(state: State):
     """Agent 1: Generate the first answer"""
@@ -191,7 +198,7 @@ def run_demo(topic: str):
     print(f"Topic: {topic}\n")
 
     for event in result['events']:
-        print(f"\n--- {event['agent'].upper()}")
+        print(f"\n--- {event['agent'].upper()} ---")
         if event['agent'] in {"writer", "reviser"}:
             print(event['draft'])
         elif event['agent'] == "reviewer":
